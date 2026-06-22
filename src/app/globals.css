@@ -1,0 +1,31 @@
+@import "tailwindcss";
+
+@theme {
+  /* --- The 5 Core Colors (From your image) --- */
+  --color-forest-dark: #2d3a33;      /* The dark green sidebar */
+  --color-sage-green: #52795c;       /* The solid green buttons and active cards */
+  --color-pastel-green: #8fae95;     /* The softer, lighter green accents */
+  --color-off-white: #f8faf9;        /* The slightly tinted background of the whole app */
+  --color-pure-white: #ffffff;       /* The crisp white for the inner cards/tables */
+  
+  /* --- Text & Line Colors --- */
+  --color-ink-black: #1c2420;        /* Very dark green-black for main text */
+  --color-slate-gray: #64746b;       /* Muted gray for subheadings/labels */
+  --color-light-gray: #e2e8f0;       /* Thin gray lines for table borders */
+  
+  /* --- Badge & Status Colors --- */
+  --color-light-emerald: #e8f5e9;    /* Light green background (In Stock) */
+  --color-dark-emerald: #2e7d32;     /* Dark green text (In Stock) */
+  
+  --color-light-amber: #fef8e7;      /* Light yellowish-orange background (Low Stock) */
+  --color-dark-amber: #b25e00;       /* Dark yellowish-orange text (Low Stock) */
+  
+  --color-light-rose: #ffebee;       /* Light red background (Out of Stock) */
+  --color-dark-rose: #c62828;        /* Dark red text (Out of Stock) */
+}
+
+/* Set global body styles directly using your visual names */
+body {
+  background-color: var(--color-off-white);
+  color: var(--color-ink-black);
+}
