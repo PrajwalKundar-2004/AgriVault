@@ -12,8 +12,13 @@ const transactionSchema = new mongoose.Schema({
     },
     type: {
         type: String,
-        enum: ['INCOMING', 'OUTGOING','REJECTED'],
+        enum: ['INCOMING', 'OUTGOING'],
         required:[true, "Transaction type is required"],
+    },
+    status: {
+        type: String,
+        enum: ['ACCEPTED', 'REJECTED'],
+        default: 'ACCEPTED',
     },
     //tracks business partner
     customerOrSupplier: {

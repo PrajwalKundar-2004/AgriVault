@@ -20,10 +20,10 @@ export async function POST(request) {
     try {
         await connectDB();
         const body = await request.json();
-        const { name, category, quantity, price, unit } = body;
+        const { name, category, quantity, costPrice, sellingPrice, maxCapacity, unit } = body;
     // backend validation to check if all required fields are provided
-    if (!name || !category || quantity === null || price === null || !unit) {
-        return NextResponse.json({ error: "Missing required fields " }, { status: 400 });
+    if (!name || !category || quantity === null || costPrice === null || sellingPrice === null || maxCapacity === null || !unit) {
+        return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
     //check if prodcut with the same name already exists in the database
     const existingProduct = await Product.findOne({ 
@@ -37,7 +37,9 @@ export async function POST(request) {
         name,
         category,
         quantity,
-        price,
+        costPrice,
+        sellingPrice,
+        maxCapacity,
         unit
     });
     await newProduct.save();

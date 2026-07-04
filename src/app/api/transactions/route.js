@@ -8,7 +8,7 @@ export async function POST(request) {
     try {
         await connectDB();
         const body = await request.json();
-        const { productId, quantity, type, customerOrSupplier, handledBy, notes } = body;
+        const { productId, quantity, type, status = 'ACCEPTED', customerOrSupplier, handledBy, notes } = body;
 
         //validation check
         if (!productId || !quantity || !type || !customerOrSupplier || !handledBy) {
@@ -21,27 +21,31 @@ export async function POST(request) {
             return NextResponse.json({ error: "Product not found in inventory" }, { status: 404 });
         }
 
-        //inventory adjustment calculation\
-        let quantityChange = 0;
-        if (type === 'INCOMING') {
-            quantityChange = quantity; //increase stock
-        } else if (type === 'OUTGOING') {
-            if (product.quantity < quantity) {
-                return NextResponse.json({
-                    error: `Insufficient stock. You want to sell ${quantity}, but only ${product.quantity} is available.`
-                },
-                    { status: 400 }
-                );
-            }
-            quantityChange = -quantity; //decrease stock
-        } else {
+        if (type !== 'INCOMING' && type !== 'OUTGOING') {
             return NextResponse.json({ error: "Invalid transaction type use INCOMING or OUTGOING" }, { status: 400 });
         }
 
+        //inventory adjustment calculation
+        let quantityChange = 0;
+        if (status === 'ACCEPTED') {
+            if (type === 'INCOMING') {
+                quantityChange = quantity; //increase stock
+            } else if (type === 'OUTGOING') {
+                if (product.quantity < quantity) {
+                    return NextResponse.json({
+                        error: `Insufficient stock. You want to sell ${quantity}, but only ${product.quantity} is available.`
+                    },
+                        { status: 400 }
+                    );
+                }
+                quantityChange = -quantity; //decrease stock
+            }
+        }
         // record the audit entry
         const newTransaction = await Transaction.create({
             productId,
             type,
+            status,
             quantity,
             customerOrSupplier,
             handledBy,
