@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import connectDB from "@/lib/db";
-import Admin from "@/models/Admin";
+import User from "@/models/User";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
@@ -10,9 +10,9 @@ export async function POST(request) {
         const { email, password, secretKey } = await request.json();
 
         // 1. Find Admin
-        const admin = await Admin.findOne({ email });
+        const admin = await User.findOne({ email, role: 'admin' });
         if (!admin) {
-            return NextResponse.json({ message: "Admin not found" }, { status: 404 });
+            return NextResponse.json({ message: "Admin not found or invalid role" }, { status: 404 });
         }
 
         // 2. Validate Password
@@ -23,7 +23,9 @@ export async function POST(request) {
 
         // 3. Validate Admin Secret Key
         // Note: Using direct comparison as per your current setup
-        if (secretKey !== admin.secretKey) {
+        
+        const isSecretKey=await bcrypt.compare(secretKey,admin.secretKey);
+        if (!isSecretKey) {
             return NextResponse.json({ message: "Invalid admin secret key" }, { status: 401 });
         }
 

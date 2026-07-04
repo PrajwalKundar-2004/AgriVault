@@ -11,29 +11,17 @@ export async function POST(request) {
             return NextResponse.json({ message: "All fields are required" }, { status: 400 });
         }
 
-        // Check if user already exists
         const existingUser = await User.findOne({ email });
         if (existingUser) {
             return NextResponse.json({ message: "Email is already registered" }, { status: 409 });
         }
 
-        // Create new staff user
-        // The Mongoose schema will automatically hash the password via its pre('save') hook
-        const staff = new User({
-            name,
-            email,
-            password,
-            role: 'staff' // using lowercase 'staff' to match proxy.js
-        });
+        const customer = new User({ name, email, password, role: 'customer' });
+        await customer.save();
 
-        await staff.save();
-
-        return NextResponse.json({
-            message: "Staff account created successfully"
-        }, { status: 201 });
-
+        return NextResponse.json({ message: "Account created successfully" }, { status: 201 });
     } catch (error) {
-        console.error("Staff Registration Error:", error);
+        console.error("Customer Registration Error:", error);
         return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
     }
 }

@@ -1,31 +1,31 @@
 @import "tailwindcss";
 
 @theme {
-  /* --- The 5 Core Colors (From your image) --- */
-  --color-forest-dark: #2d3a33;      /* The dark green sidebar */
-  --color-sage-green: #52795c;       /* The solid green buttons and active cards */
-  --color-pastel-green: #8fae95;     /* The softer, lighter green accents */
-  --color-off-white: #f8faf9;        /* The slightly tinted background of the whole app */
-  --color-pure-white: #ffffff;       /* The crisp white for the inner cards/tables */
+  /* --- The 5 Core Colors (Midnight Slate) --- */
+  --color-brand-dark: #020617;       /* The near-black slate for sidebar/nav */
+  --color-brand-primary: #4f46e5;    /* Vibrant indigo for buttons/active items */
+  --color-brand-secondary: #c7d2fe;  /* Soft indigo for hover states */
+  --color-brand-bg: #f8fafc;         /* Cool-tinted white for main app background */
+  --color-brand-surface: #ffffff;    /* Crisp white for cards/tables */
   
   /* --- Text & Line Colors --- */
-  --color-ink-black: #1c2420;        /* Very dark green-black for main text */
-  --color-slate-gray: #64746b;       /* Muted gray for subheadings/labels */
-  --color-light-gray: #e2e8f0;       /* Thin gray lines for table borders */
+  --color-text-main: #0f172a;        /* Dark slate for main text */
+  --color-text-muted: #64748b;       /* Muted slate for subheadings/labels */
+  --color-border-subtle: #e2e8f0;    /* Thin gray for table borders/dividers */
   
   /* --- Badge & Status Colors --- */
-  --color-light-emerald: #e8f5e9;    /* Light green background (In Stock) */
-  --color-dark-emerald: #2e7d32;     /* Dark green text (In Stock) */
+  --color-light-emerald: #dcfce7;    /* Light green background (In Stock) */
+  --color-dark-emerald: #166534;     /* Dark green text (In Stock) */
   
-  --color-light-amber: #fef8e7;      /* Light yellowish-orange background (Low Stock) */
-  --color-dark-amber: #b25e00;       /* Dark yellowish-orange text (Low Stock) */
+  --color-light-amber: #fef9c3;      /* Light yellowish background (Low Stock) */
+  --color-dark-amber: #854d0e;       /* Dark yellowish text (Low Stock) */
   
-  --color-light-rose: #ffebee;       /* Light red background (Out of Stock) */
-  --color-dark-rose: #c62828;        /* Dark red text (Out of Stock) */
+  --color-light-rose: #fee2e2;       /* Light red background (Out of Stock) */
+  --color-dark-rose: #991b1b;        /* Dark red text (Out of Stock) */
 }
 
-/* Set global body styles directly using your visual names */
+/* Set global body styles */
 body {
-  background-color: var(--color-off-white);
-  color: var(--color-ink-black);
+  background-color: var(--color-brand-bg);
+  color: var(--color-text-main);
 }

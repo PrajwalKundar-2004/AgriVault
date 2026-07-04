@@ -1,10 +1,10 @@
 import { Toaster } from "sonner";
 
 export const metadata = {
-  title: "Staff Portal | AgriVault",
+  title: "Customer Portal | AgriVault",
 };
 
-export default function StaffLayout({ children }) {
+export default function CustomerLayout({ children }) {
   return (
     <>
       <Toaster position="top-right" richColors />

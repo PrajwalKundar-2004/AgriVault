@@ -15,7 +15,10 @@ const userSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
-    role:{type: String, enum: ['ADMIN', 'STAFF', 'CUSTOMER'], default: 'CUSTOMER'},
+    secretKey: {
+        type: String,
+    },
+    role:{type: String, enum: ['ADMIN', 'STAFF', 'CUSTOMER', 'admin', 'staff', 'customer'], default: 'CUSTOMER'},
 },
 { timestamps: true });
 userSchema.pre('save', async function () {
