@@ -1,11 +1,27 @@
 "use client";
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 
 export default function StaffProfile() {
   const router = useRouter();
+  const [staffIdentity, setStaffIdentity] = useState({ name: "Loading...", email: "" });
+
+  useEffect(() => {
+    const fetchIdentity = async () => {
+      try {
+        const res = await fetch("/api/staff/me");
+        if (res.ok) {
+          const data = await res.json();
+          setStaffIdentity(data);
+        }
+      } catch (err) {
+        console.error("Failed to fetch profile info");
+      }
+    };
+    fetchIdentity();
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -45,7 +61,8 @@ export default function StaffProfile() {
             </svg>
           </div>
           
-          <h3 className="text-2xl font-bold text-white mb-1">Staff Member</h3>
+          <h3 className="text-2xl font-bold text-white mb-1">{staffIdentity.name}</h3>
+          {staffIdentity.email && <p className="text-slate-400 text-sm mb-3">{staffIdentity.email}</p>}
           <span className="px-3 py-1 bg-cyan-500/10 text-cyan-400 text-xs font-bold uppercase tracking-wider rounded-full border border-cyan-500/20 mb-8">
             Authorized Personnel
           </span>

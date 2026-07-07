@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   /* --- The 5 Core Colors (Midnight Slate) --- */
   --color-brand-dark: #020617;       /* The near-black slate for sidebar/nav */

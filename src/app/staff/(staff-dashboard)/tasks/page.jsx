@@ -13,7 +13,7 @@ export default function StaffTasks() {
 
   const fetchTransactions = async () => {
     try {
-      const res = await fetch("/api/transactions");
+      const res = await fetch("/api/staff/my-tasks");
       const data = await res.json();
       if (res.ok) {
         setTransactions(data);

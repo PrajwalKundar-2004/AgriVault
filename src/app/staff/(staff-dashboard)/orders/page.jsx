@@ -15,7 +15,20 @@ export default function StaffOrders() {
 
   useEffect(() => {
     fetchRequests();
+    fetchStaffIdentity();
   }, []);
+
+  const fetchStaffIdentity = async () => {
+    try {
+      const res = await fetch("/api/staff/me");
+      if (res.ok) {
+        const data = await res.json();
+        setStaffName(data.name);
+      }
+    } catch (err) {
+      console.error("Failed to fetch staff identity");
+    }
+  };
 
   const fetchRequests = async () => {
     try {
@@ -37,7 +50,6 @@ export default function StaffOrders() {
 
   const openModal = (request) => {
     setSelectedRequest(request);
-    setStaffName("");
     setTransactionNotes("");
   };
 
@@ -212,11 +224,9 @@ export default function StaffOrders() {
                   </label>
                   <input
                     type="text"
-                    required
+                    readOnly
                     value={staffName}
-                    onChange={(e) => setStaffName(e.target.value)}
-                    placeholder="Enter your name"
-                    className="w-full px-3 py-2 text-sm rounded-lg border border-blue-900/50 bg-slate-900/50 text-white focus:ring-2 focus:ring-cyan-500 outline-none"
+                    className="w-full px-3 py-2 text-sm rounded-lg border border-blue-900/50 bg-slate-900/80 text-slate-400 outline-none cursor-not-allowed"
                   />
                 </div>
 
