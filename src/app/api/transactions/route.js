@@ -68,3 +68,18 @@ export async function POST(request) {
         return NextResponse.json({ error:error.message }, { status: 500 });
     }
 }
+
+// GET all transactions (view history)
+export async function GET(request) {
+    try {
+        await connectDB();
+        // Fetch all transactions, sort by newest, and populate the productId
+        const transactions = await Transaction.find({})
+            .populate('productId')
+            .sort({ createdAt: -1 });
+        return NextResponse.json(transactions, { status: 200 });
+    } catch (error) {
+        console.error("Error fetching transactions:", error);
+        return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+}

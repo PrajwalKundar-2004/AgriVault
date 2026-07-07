@@ -26,20 +26,21 @@ export async function PUT(request,{params}){
             return NextResponse.json({ error: "Associated product not found" }, { status: 404 });
         }
         if (action === 'REJECTED') {
-            const rejectionReason = body.notes || "No specific reason provided.";
+            const transactionNotes = body.notes || "No specific reason provided.";
 
             orderRequest.status = 'REJECTED';
             orderRequest.handledBy = staffName;
-            orderRequest.notes = rejectionReason; 
+            orderRequest.notes = transactionNotes; 
             await orderRequest.save();
 
             await Transaction.create({
                 productId: product._id,
                 quantity: orderRequest.quantityRequested,
-                type: 'REJECTED',
+                type: orderRequest.requestType === 'BUYER_ORDER' ? 'OUTGOING' : 'INCOMING',
+                status: 'REJECTED',
                 customerOrSupplier: orderRequest.entityName,
                 handledBy: staffName,
-                notes: `Request rejected. Reason: ${rejectionReason}`
+                notes: transactionNotes
             });
 
             return NextResponse.json({ 
@@ -76,14 +77,17 @@ export async function PUT(request,{params}){
             orderRequest.status = 'APPROVED';
             orderRequest.handledBy = staffName;
             await orderRequest.save();
+            const transactionNotes = body.notes || orderRequest.notes || 'No notes provided.';
+
             //automatically drop a pemament paper-tral inside your transaction collection
             await Transaction.create({
                 productId: product._id,
                 quantity: orderRequest.quantityRequested,
                 type: orderRequest.requestType === 'BUYER_ORDER' ? 'OUTGOING' : 'INCOMING',
+                status: 'ACCEPTED',
                 customerOrSupplier: orderRequest.entityName,
                 handledBy: staffName,
-                notes: `Auto-generated transaction for request approval.Notes: ${orderRequest.notes || 'None'}`
+                notes: transactionNotes
             });
             return NextResponse.json({message:"Request approved , inventory updated and ledger written successfully!",
             currentStock: updatedQuantity
