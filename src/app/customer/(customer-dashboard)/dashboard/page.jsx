@@ -140,6 +140,9 @@ export default function CustomerDashboard() {
                     </span>
                     <p className="text-slate-900 dark:text-white font-bold mt-3 text-sm group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors duration-500">{req.requestType.replace('_', ' ')}</p>
                     <p className="text-slate-500 dark:text-slate-400 text-xs mt-1 transition-colors duration-500">{req.productId?.name || 'Unknown Product'}</p>
+                    {req.notes && (
+                      <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-2 italic line-clamp-1">Note: {req.notes}</p>
+                    )}
                 </div>
                 <div className="text-right">
                     <p className="text-2xl font-black text-slate-800 dark:text-slate-200 transition-colors duration-500">{req.quantityRequested} <span className="text-sm font-medium text-slate-500">{req.productId?.unit}</span></p>

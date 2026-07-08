@@ -96,6 +96,12 @@ export default function CustomerRequests() {
                         Processed by Staff: <span className="text-slate-800 dark:text-slate-300 font-bold dark:font-medium">{req.handledBy}</span>
                         </p>
                     )}
+                    {req.notes && (
+                      <div className="mt-3 p-3 bg-slate-100/50 dark:bg-slate-800/50 rounded-xl border border-slate-200/80 dark:border-white/5">
+                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Staff Note</p>
+                        <p className="text-sm text-slate-700 dark:text-slate-300 italic">"{req.notes}"</p>
+                      </div>
+                    )}
                   </div>
                 </div>
                 

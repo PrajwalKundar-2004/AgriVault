@@ -81,6 +81,12 @@ export default function InventoryPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (Number(formData.quantity) > Number(formData.maxCapacity)) {
+      toast.error("Current stock cannot exceed max capacity. Please increase the capacity first.");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
