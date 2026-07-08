@@ -1,12 +1,17 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function AdminSupportInbox() {
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeReplyId, setActiveReplyId] = useState(null);
+  
+  // Modal state
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedTicket, setSelectedTicket] = useState(null);
+  
+  // Reply state
   const [replyText, setReplyText] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -30,21 +35,42 @@ export default function AdminSupportInbox() {
     }
   };
 
-  const handleReply = async (ticketId) => {
-    if (!replyText.trim()) return;
+  const openTicketModal = (ticket) => {
+    setSelectedTicket(ticket);
+    setReplyText("");
+    setIsModalOpen(true);
+  };
+
+  const closeTicketModal = () => {
+    setIsModalOpen(false);
+    setTimeout(() => setSelectedTicket(null), 300);
+  };
+
+  const handleReply = async () => {
+    if (!replyText.trim() || !selectedTicket) return;
     setIsSubmitting(true);
     try {
       const res = await fetch("/api/admin/support/reply", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ticketId, replyMessage: replyText })
+        body: JSON.stringify({ ticketId: selectedTicket._id, replyMessage: replyText })
       });
       const data = await res.json();
       if (res.ok) {
         toast.success("Reply successfully sent to customer!");
-        setActiveReplyId(null);
+        
+        // Optimistically update the selected ticket in the modal
+        const newMsg = { sender: "ADMIN", text: replyText, createdAt: new Date().toISOString() };
+        const updatedTicket = { 
+          ...selectedTicket, 
+          status: 'RESOLVED', 
+          messages: [...(selectedTicket.messages || []), newMsg] 
+        };
+        setSelectedTicket(updatedTicket);
+        
+        // Optimistically update the ticket in the main list
+        setTickets(prev => prev.map(t => t._id === selectedTicket._id ? updatedTicket : t));
         setReplyText("");
-        fetchTickets();
       } else {
         toast.error(data.error || "Failed to send reply");
       }
@@ -67,7 +93,7 @@ export default function AdminSupportInbox() {
       <div className="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden p-6 lg:p-8">
         {loading ? (
           <div className="flex justify-center py-20">
-            <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-slate-900"></div>
+             <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-brand-primary"></div>
           </div>
         ) : tickets.length === 0 ? (
           <div className="text-center py-24 text-slate-500 font-medium border border-slate-200 border-dashed rounded-2xl bg-slate-50">
@@ -77,100 +103,138 @@ export default function AdminSupportInbox() {
             Inbox is zero! No support tickets have been submitted.
           </div>
         ) : (
-          <div className="grid gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {tickets.map((ticket, idx) => (
               <motion.div
                 key={ticket._id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.05 }}
-                className="p-5 rounded-2xl bg-slate-50 border border-slate-200 hover:border-slate-300 transition-colors group"
+                initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.05 }}
+                onClick={() => openTicketModal(ticket)}
+                className="bg-brand-surface rounded-2xl p-6 border border-border-subtle/50 shadow-sm hover:shadow-md hover:border-brand-primary/40 cursor-pointer transition-all relative overflow-hidden group flex flex-col h-full"
               >
-                <div className="flex justify-between items-start mb-3">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-brand-secondary/10 to-transparent rounded-bl-full -z-10 transition-transform group-hover:scale-110"></div>
+                
+                <div className="flex justify-between items-start mb-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-600 font-black">
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-brand-primary to-brand-secondary flex items-center justify-center text-white font-bold text-lg shadow-inner shrink-0">
                       {ticket.customerId?.name ? ticket.customerId.name.charAt(0).toUpperCase() : '?'}
                     </div>
-                    <div>
-                      <p className="font-bold text-slate-900 text-sm">{ticket.customerId?.name || 'Unknown User'}</p>
-                      <p className="text-xs text-slate-500 font-medium">{ticket.customerId?.email}</p>
+                    <div className="min-w-0">
+                      <p className="font-bold text-text-main text-base truncate">{ticket.customerId?.name || 'Unknown User'}</p>
+                      <p className="text-xs text-text-muted font-medium truncate">{ticket.customerId?.email}</p>
                     </div>
-                  </div>
-                  <div className="text-right">
-                    <span className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full ${
-                      ticket.status === 'OPEN' ? 'bg-blue-100 text-blue-700' : 'bg-emerald-100 text-emerald-700'
-                    }`}>
-                      {ticket.status}
-                    </span>
-                    <p className="text-[10px] text-slate-400 mt-2 font-semibold">
-                      {new Date(ticket.createdAt).toLocaleString()}
-                    </p>
                   </div>
                 </div>
 
-                <div className="mt-4 bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
-                  <p className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">
-                    {ticket.message}
+                <div className="flex-1">
+                  <p className="text-sm text-text-muted line-clamp-3 mb-4">
+                    {ticket.messages && ticket.messages.length > 0 
+                      ? ticket.messages[ticket.messages.length - 1].text 
+                      : 'No messages'}
                   </p>
                 </div>
 
-                {/* Reply Section */}
-                {ticket.status !== 'RESOLVED' ? (
-                  <div className="mt-4 pt-4 border-t border-slate-200">
-                    {activeReplyId === ticket._id ? (
-                      <div className="space-y-3">
-                        <textarea
-                          value={replyText}
-                          onChange={(e) => setReplyText(e.target.value)}
-                          placeholder="Type your reply to the customer..."
-                          rows={3}
-                          className="w-full px-4 py-3 text-sm rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500 outline-none resize-none"
-                        />
-                        <div className="flex justify-end gap-2">
-                          <button
-                            onClick={() => {
-                              setActiveReplyId(null);
-                              setReplyText("");
-                            }}
-                            className="px-4 py-2 text-xs font-bold text-slate-500 hover:bg-slate-200 rounded-lg transition-colors"
-                          >
-                            Cancel
-                          </button>
-                          <button
-                            onClick={() => handleReply(ticket._id)}
-                            disabled={isSubmitting || !replyText.trim()}
-                            className="px-6 py-2 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold rounded-lg shadow-sm transition-all disabled:opacity-50 flex items-center gap-2"
-                          >
-                            {isSubmitting ? "Sending..." : "Send Reply Email"}
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <button
-                        onClick={() => {
-                          setActiveReplyId(ticket._id);
-                          setReplyText("");
-                        }}
-                        className="text-xs font-bold text-emerald-600 hover:text-emerald-700 flex items-center gap-1.5"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" /></svg>
-                        Reply to Customer
-                      </button>
-                    )}
-                  </div>
-                ) : (
-                  ticket.adminNotes && (
-                    <div className="mt-4 bg-emerald-50 p-4 rounded-xl border border-emerald-100 border-l-4 border-l-emerald-500">
-                      <p className="text-[10px] uppercase font-black tracking-wider text-emerald-800 mb-1">Your Reply:</p>
-                      <p className="text-sm text-emerald-900 whitespace-pre-wrap">{ticket.adminNotes}</p>
-                    </div>
-                  )
-                )}
+                <div className="mt-auto pt-4 border-t border-border-subtle/50 flex justify-between items-center">
+                  <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full ${
+                    ticket.status === 'OPEN' ? 'bg-light-amber text-dark-amber border border-dark-amber/20' : 'bg-light-emerald text-dark-emerald border border-dark-emerald/20'
+                  }`}>
+                    {ticket.status}
+                  </span>
+                  
+                  <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider">
+                    {new Date(ticket.updatedAt || ticket.createdAt).toLocaleDateString()}
+                  </span>
+                </div>
               </motion.div>
             ))}
           </div>
         )}
       </div>
+
+      {/* Ticket Modal */}
+      <AnimatePresence>
+        {isModalOpen && selectedTicket && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={closeTicketModal}
+              className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh]"
+            >
+              {/* Modal Header */}
+              <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50 shrink-0">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-brand-primary/10 flex items-center justify-center text-brand-primary font-black text-sm">
+                    {selectedTicket.customerId?.name ? selectedTicket.customerId.name.charAt(0).toUpperCase() : '?'}
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-slate-900">Message from {selectedTicket.customerId?.name || 'Unknown User'}</h3>
+                    <p className="text-xs text-slate-500 font-medium">{selectedTicket.customerId?.email}</p>
+                  </div>
+                </div>
+                <button type="button" onClick={closeTicketModal} className="text-slate-400 hover:text-slate-700 bg-white shadow-sm border border-slate-100 p-2 rounded-full transition-colors">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+              </div>
+
+              {/* Chat Content */}
+              <div className="p-6 space-y-6 overflow-y-auto flex-1 bg-brand-bg/50">
+                {selectedTicket.messages && selectedTicket.messages.map((msg, i) => (
+                  <div key={i}>
+                    {msg.sender === 'CUSTOMER' ? (
+                      <div className="flex flex-col items-start gap-1">
+                        <span className="text-[10px] font-bold text-text-muted uppercase tracking-widest pl-1">
+                          {new Date(msg.createdAt || selectedTicket.createdAt).toLocaleString()}
+                        </span>
+                        <div className="bg-brand-surface border border-border-subtle/50 p-4 rounded-2xl rounded-tl-sm shadow-sm max-w-[90%] sm:max-w-[85%] relative">
+                          <p className="text-sm text-text-main whitespace-pre-wrap leading-relaxed">
+                            {msg.text}
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-end gap-1 mt-4">
+                        <span className="text-[10px] font-bold text-brand-primary uppercase tracking-widest pr-1">
+                          Support Team Reply • {new Date(msg.createdAt).toLocaleString()}
+                        </span>
+                        <div className="bg-gradient-to-r from-brand-primary to-brand-secondary text-white p-4 rounded-2xl rounded-tr-sm shadow-sm max-w-[90%] sm:max-w-[85%] relative">
+                          <p className="text-sm font-medium whitespace-pre-wrap leading-relaxed">
+                            {msg.text}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* Reply Input Area */}
+              <div className="p-4 sm:p-6 border-t border-border-subtle/50 bg-brand-surface shrink-0">
+                <label className="block text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Write a Reply</label>
+                <textarea
+                  value={replyText}
+                  onChange={(e) => setReplyText(e.target.value)}
+                  placeholder="Type your response here..."
+                  rows={3}
+                  className="w-full px-4 py-3 text-sm rounded-xl border border-border-subtle focus:ring-2 focus:ring-brand-primary outline-none resize-none bg-brand-bg/50 text-text-main"
+                />
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mt-3 gap-3">
+                  <span className="text-xs text-text-muted font-medium">Customer will receive this via email.</span>
+                  <button
+                    onClick={handleReply}
+                    disabled={isSubmitting || !replyText.trim()}
+                    className="w-full sm:w-auto px-6 py-2.5 bg-brand-primary hover:bg-brand-secondary text-white text-sm font-bold rounded-xl shadow-md transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    {isSubmitting ? "Sending..." : "Send Reply"}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

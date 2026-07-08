@@ -61,10 +61,10 @@ export default function StaffManagementPage() {
           <p className="text-sm text-text-muted mt-1">View active staff members and manage their access.</p>
         </div>
         <div className="bg-brand-bg/50 px-4 py-2 rounded-xl border border-border-subtle/30 flex items-center gap-3">
-            <span className="w-2 h-2 rounded-full bg-brand-primary animate-pulse"></span>
-            <span className="text-sm font-semibold text-text-main">
-                {isLoading ? "..." : staffList.length} Active Staff
-            </span>
+          <span className="w-2 h-2 rounded-full bg-brand-primary animate-pulse"></span>
+          <span className="text-sm font-semibold text-text-main">
+            {isLoading ? "..." : staffList.length} Active Staff
+          </span>
         </div>
       </div>
 
@@ -98,7 +98,7 @@ export default function StaffManagementPage() {
               >
                 {/* Decorative background flair */}
                 <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-brand-secondary/20 to-transparent rounded-bl-full -z-10 transition-transform group-hover:scale-110"></div>
-                
+
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-brand-primary to-brand-secondary flex items-center justify-center text-white font-bold text-lg shadow-inner">
@@ -112,8 +112,8 @@ export default function StaffManagementPage() {
                       </div>
                     </div>
                   </div>
-                  
-                  <button 
+
+                  <button
                     onClick={() => handleRemoveStaff(staff)}
                     className="w-8 h-8 rounded-lg bg-brand-bg flex items-center justify-center text-text-muted hover:bg-light-rose hover:text-dark-rose transition-colors"
                     title="Remove Staff"

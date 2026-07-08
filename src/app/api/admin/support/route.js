@@ -20,7 +20,7 @@ export async function GET(req) {
     // Fetch tickets and populate customer name and email
     const tickets = await SupportTicket.find()
       .populate("customerId", "name email")
-      .sort({ createdAt: -1 });
+      .sort({ updatedAt: -1 });
 
     return NextResponse.json(tickets, { status: 200 });
   } catch (error) {

@@ -165,12 +165,12 @@ export default function CustomerCatalog() {
                    {/* Buy Side Info */}
                    <div className="flex justify-between items-center text-sm py-1">
                       <span className="text-slate-500 dark:text-slate-400 font-medium">Buy Price:</span>
-                      <span className="text-slate-900 dark:text-white font-black transition-colors duration-500">${prod.sellingPrice} <span className="text-slate-400 dark:text-slate-500 text-xs font-normal">/ {prod.unit}</span></span>
+                      <span className="text-slate-900 dark:text-white font-black transition-colors duration-500">₹{prod.sellingPrice} <span className="text-slate-400 dark:text-slate-500 text-xs font-normal">/ {prod.unit}</span></span>
                    </div>
                    {/* Supply Side Info */}
                    <div className="flex justify-between items-center text-sm py-1 border-t border-slate-200 dark:border-white/5 mt-1 pt-2 transition-colors duration-500">
                       <span className="text-slate-500 dark:text-slate-400 font-medium">We Pay:</span>
-                      <span className="text-emerald-600 dark:text-emerald-400 font-black transition-colors duration-500">${prod.costPrice} <span className="text-emerald-700 text-xs font-normal">/ {prod.unit}</span></span>
+                      <span className="text-emerald-600 dark:text-emerald-400 font-black transition-colors duration-500">₹{prod.costPrice} <span className="text-emerald-700 text-xs font-normal">/ {prod.unit}</span></span>
                    </div>
                 </div>
               </div>
@@ -245,13 +245,13 @@ export default function CustomerCatalog() {
                    <div className="flex justify-between items-center mb-3">
                       <span className="text-slate-500 dark:text-slate-400 font-medium text-sm">Unit Price:</span>
                       <span className="text-slate-900 dark:text-white font-black text-lg transition-colors duration-500">
-                        ${requestMode === 'BUY' ? selectedProduct.sellingPrice : selectedProduct.costPrice}
+                        ₹{requestMode === 'BUY' ? selectedProduct.sellingPrice : selectedProduct.costPrice}
                       </span>
                    </div>
                    <div className="flex justify-between items-center pt-3 border-t border-slate-200 dark:border-white/5 transition-colors duration-500">
                       <span className="text-slate-500 dark:text-slate-400 font-medium text-sm">Estimated Total:</span>
                       <span className={`font-black text-2xl ${requestMode === 'BUY' ? 'text-blue-600 dark:text-blue-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
-                        ${(quantity * (requestMode === 'BUY' ? selectedProduct.sellingPrice : selectedProduct.costPrice)).toLocaleString()}
+                        ₹{(quantity * (requestMode === 'BUY' ? selectedProduct.sellingPrice : selectedProduct.costPrice)).toLocaleString()}
                       </span>
                    </div>
                 </div>

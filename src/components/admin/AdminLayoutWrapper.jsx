@@ -17,7 +17,7 @@ export default function AdminLayoutWrapper({ children }) {
 
         <Header setIsOpen={setIsSidebarOpen} />
         
-        <main className="flex-1 overflow-y-auto p-4 lg:p-8 z-10 relative">
+        <main className="flex-1 overflow-y-auto p-4 lg:p-8">
           {children}
         </main>
       </div>

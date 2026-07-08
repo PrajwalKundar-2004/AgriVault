@@ -30,13 +30,9 @@ export async function POST(req) {
       return NextResponse.json({ error: "Ticket not found" }, { status: 404 });
     }
 
-    if (ticket.status === "RESOLVED") {
-      return NextResponse.json({ error: "Ticket is already resolved" }, { status: 400 });
-    }
-
     // 2. Update the ticket in DB
     ticket.status = "RESOLVED";
-    ticket.adminNotes = replyMessage;
+    ticket.messages.push({ sender: "ADMIN", text: replyMessage });
     await ticket.save();
 
     // 3. Dispatch Email via Nodemailer
@@ -57,7 +53,7 @@ export async function POST(req) {
           from: `"AgriVault Support" <${emailUser}>`,
           to: ticket.customerId.email,
           subject: `Re: Your Support Request - AgriVault`,
-          text: `Hello ${ticket.customerId.name},\n\nWe have reviewed your support ticket.\n\nAdmin Reply:\n${replyMessage}\n\nOriginal Message:\n${ticket.message}\n\nTicket ID: ${ticket._id}`,
+          text: `Hello ${ticket.customerId.name},\n\nWe have reviewed your support ticket.\n\nAdmin Reply:\n${replyMessage}\n\nOriginal Message:\n${ticket.messages[0]?.text}\n\nTicket ID: ${ticket._id}`,
           html: `
             <div style="font-family: sans-serif; padding: 20px; background-color: #f8fafc; max-width: 600px; margin: 0 auto; border-radius: 10px;">
               <div style="background-color: #10b981; padding: 15px; border-radius: 8px 8px 0 0;">
@@ -74,7 +70,7 @@ export async function POST(req) {
                 <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 25px 0;" />
                 
                 <h4 style="color: #64748b; margin-bottom: 10px; text-transform: uppercase; font-size: 12px; letter-spacing: 1px;">Your Original Message:</h4>
-                <p style="color: #64748b; font-style: italic; white-space: pre-wrap; font-size: 14px;">"${ticket.message}"</p>
+                <p style="color: #64748b; font-style: italic; white-space: pre-wrap; font-size: 14px;">"${ticket.messages[0]?.text}"</p>
                 
                 <p style="color: #94a3b8; font-size: 12px; margin-top: 30px;">Ticket Reference: ${ticket._id}</p>
               </div>

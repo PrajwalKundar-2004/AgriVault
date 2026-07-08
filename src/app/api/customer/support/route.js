@@ -30,12 +30,20 @@ export async function POST(req) {
       return NextResponse.json({ error: "Customer not found" }, { status: 404 });
     }
 
-    // 1. Save Ticket to MongoDB
-    const ticket = await SupportTicket.create({
-      customerId: customer._id,
-      message,
-      status: "OPEN",
-    });
+    // 1. Find existing ticket or create a new one
+    let ticket = await SupportTicket.findOne({ customerId: customer._id });
+
+    if (ticket) {
+      ticket.messages.push({ sender: "CUSTOMER", text: message });
+      ticket.status = "OPEN"; // Re-open if it was resolved
+      await ticket.save();
+    } else {
+      ticket = await SupportTicket.create({
+        customerId: customer._id,
+        messages: [{ sender: "CUSTOMER", text: message }],
+        status: "OPEN",
+      });
+    }
 
     // 2. Dispatch Email via Nodemailer (if credentials exist)
     const emailUser = process.env.EMAIL_USER;
