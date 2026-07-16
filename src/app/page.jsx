@@ -1,9 +1,13 @@
-import Image from "next/image";
+import { redirect } from 'next/navigation';
+import { cookies } from 'next/headers';
 
-export default function Home() {
-  return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <h1 className="text-4xl font-bold">AgriVault</h1>
-    </main>
-  );
+export default async function Home() {
+  const cookieStore = await cookies();
+  const customerToken = cookieStore.get('customer_token');
+
+  if (customerToken) {
+    redirect('/customer/dashboard');
+  } else {
+    redirect('/customer/login');
+  }
 }
