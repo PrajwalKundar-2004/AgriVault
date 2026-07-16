@@ -60,14 +60,14 @@ export default function Sidebar() {
   };
 
   const mobileSidebarVariants = {
-    open: { x: 0, transition: { type: "spring", stiffness: 300, damping: 30 } },
-    closed: { x: "-100%", transition: { type: "spring", stiffness: 300, damping: 30 } },
+    open: { x: 0, transition: { type: "tween", ease: "easeInOut", duration: 0.3 } },
+    closed: { x: "-100%", transition: { type: "tween", ease: "easeInOut", duration: 0.3 } },
   };
 
   const SidebarContent = ({ isMobile }) => (
     <>
       {/* Subtle Background Glow in Sidebar */}
-      <div className="absolute top-0 left-0 w-full h-64 bg-emerald-500/10 blur-[100px] pointer-events-none rounded-full dark:opacity-50" />
+      <div className="absolute top-0 left-0 w-full h-64 bg-emerald-500/10 blur-2xl lg:blur-[100px] pointer-events-none rounded-full dark:opacity-50" />
 
       {/* Logo Section */}
       <div className="h-24 flex items-center px-8 border-b border-slate-200 dark:border-white/5 relative z-10 transition-colors duration-500">
@@ -124,7 +124,7 @@ export default function Sidebar() {
       </motion.nav>
 
       {/* Bottom Area: Help */}
-      <div className="p-4 lg:p-6 border-t border-slate-200 dark:border-white/5 relative z-10 space-y-4 transition-colors duration-500">
+      <div className="p-4 pb-16 lg:pb-6 lg:p-6 border-t border-slate-200 dark:border-white/5 relative z-10 space-y-4 transition-colors duration-500">
         
         {/* Help Section */}
         <div className="bg-gradient-to-br from-emerald-50 to-lime-50 dark:from-emerald-900/40 dark:to-slate-900/40 rounded-xl lg:rounded-2xl p-3 lg:p-5 border border-emerald-500/20 dark:border-emerald-500/10 transition-colors duration-500">
@@ -178,14 +178,14 @@ export default function Sidebar() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsOpen(false)}
-              className="fixed inset-0 bg-slate-900/60 dark:bg-slate-950/60 z-40 lg:hidden backdrop-blur-sm"
+              className="fixed inset-0 bg-slate-900/60 dark:bg-slate-950/60 z-40 lg:hidden"
             />
             <motion.aside
               initial="closed"
               animate="open"
               exit="closed"
               variants={mobileSidebarVariants}
-              className="fixed top-0 left-0 z-50 h-screen w-[280px] bg-white dark:bg-slate-950 border-r border-slate-200 dark:border-white/5 shadow-2xl flex flex-col lg:hidden transition-colors duration-500"
+              className="fixed top-0 left-0 z-50 h-[100dvh] w-[280px] bg-white dark:bg-slate-950 border-r border-slate-200 dark:border-white/5 shadow-2xl flex flex-col lg:hidden transition-colors duration-500"
             >
               <SidebarContent isMobile={true} />
             </motion.aside>

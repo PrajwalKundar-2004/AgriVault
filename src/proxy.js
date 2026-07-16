@@ -19,6 +19,15 @@ export default async function proxy(req) {
     const staffToken = req.cookies.get("staff_token")?.value;
     const customerToken = req.cookies.get("customer_token")?.value;
 
+    // --- RULE 0: Root Route ---
+    if (pathname === "/") {
+        const customerPayload = customerToken ? await verifyToken(customerToken) : null;
+        if (customerPayload && customerPayload.role === "customer") {
+            return NextResponse.redirect(new URL("/customer/dashboard", req.url));
+        }
+        return NextResponse.redirect(new URL("/customer/login", req.url));
+    }
+
     // --- RULE 1: Admin Route Protection ---
     if (pathname.startsWith("/vault-admin")) {
         const adminPayload = adminToken ? await verifyToken(adminToken) : null;
@@ -110,6 +119,7 @@ export default async function proxy(req) {
 
 export const config = {
     matcher: [
+        "/",
         "/vault-admin/:path*",
         "/staff/:path*",
         "/customer/:path*",
