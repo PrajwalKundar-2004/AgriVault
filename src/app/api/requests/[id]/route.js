@@ -45,7 +45,7 @@ export async function PUT(request,{params}){
 
             return NextResponse.json({ 
                 message: "Request rejected successfully",
-                reason: rejectionReason 
+                reason: transactionNotes 
             }, { status: 200 });
         }
         if(action === 'APPROVED'){
