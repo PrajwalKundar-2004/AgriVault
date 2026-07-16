@@ -92,6 +92,7 @@ export default async function proxy(req) {
             "/api/staff/register",
             "/api/staff/logout",
             "/api/customer/login",
+            "/api/customer/verify-otp",
             "/api/customer/register",
             "/api/customer/logout",
         ];
