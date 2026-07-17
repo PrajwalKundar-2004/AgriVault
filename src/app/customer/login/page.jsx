@@ -7,11 +7,15 @@ import Link from "next/link";
 
 export default function CustomerLogin() {
   const [step, setStep] = useState(1);
+  const [isForgotPasswordFlow, setIsForgotPasswordFlow] = useState(false);
   const [formData, setFormData] = useState({ email: "", password: "" });
+  const [passwords, setPasswords] = useState({ newPassword: "", confirmPassword: "" });
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [resendTimer, setResendTimer] = useState(0);
+  const [lockoutTimer, setLockoutTimer] = useState(0);
   const router = useRouter();
 
   useEffect(() => {
@@ -21,6 +25,16 @@ export default function CustomerLogin() {
     }
     return () => clearInterval(interval);
   }, [resendTimer]);
+
+  useEffect(() => {
+    let interval;
+    if (lockoutTimer > 0) {
+      interval = setInterval(() => setLockoutTimer((prev) => prev - 1), 1000);
+    } else if (lockoutTimer === 0 && error && error.includes("Account locked")) {
+      setError(""); 
+    }
+    return () => clearInterval(interval);
+  }, [lockoutTimer, error]);
 
   const handleInputChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
 
@@ -44,6 +58,14 @@ export default function CustomerLogin() {
     }
   };
 
+  const maskEmail = (emailStr) => {
+    if (!emailStr) return "";
+    const [name, domain] = emailStr.split("@");
+    if (!domain) return emailStr;
+    const maskedName = name.length > 2 ? name[0] + "***" + name[name.length - 1] : name + "***";
+    return `${maskedName}@${domain}`;
+  };
+
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -57,10 +79,48 @@ export default function CustomerLogin() {
       const data = await res.json();
       if (res.ok && data.requiresOtp) {
         toast.success(data.message || "OTP sent to your email!");
+        setIsForgotPasswordFlow(false);
+        setOtp(["", "", "", "", "", ""]);
         setStep(2);
-        setResendTimer(30); // 30 second cooldown for resend
+        setResendTimer(30);
       } else {
-        setError(data.message || data.error || "Invalid credentials");
+        if (data.lockUntil) {
+          const remainingSeconds = Math.ceil((new Date(data.lockUntil) - new Date()) / 1000);
+          setLockoutTimer(remainingSeconds > 0 ? remainingSeconds : 0);
+          setError("Account locked due to too many failed attempts.");
+        } else {
+          setError(data.message || data.error || "Invalid credentials");
+        }
+      }
+    } catch {
+      setError("Network error. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    if (!formData.email) {
+      setError("Please enter your email address first.");
+      return;
+    }
+    setError("");
+    setIsLoading(true);
+    try {
+      const res = await fetch("/api/customer/forgot-password/send-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: formData.email }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        toast.success("Password reset code sent to your email!");
+        setIsForgotPasswordFlow(true);
+        setOtp(["", "", "", "", "", ""]);
+        setStep(3);
+        setResendTimer(30);
+      } else {
+        setError(data.message || data.error || "Failed to send code.");
       }
     } catch {
       setError("Network error. Please try again.");
@@ -73,7 +133,7 @@ export default function CustomerLogin() {
     if (e) e.preventDefault();
     const otpString = otp.join("");
     if (otpString.length !== 6) {
-      setError("Please enter the complete 6-digit code.");
+      setError("Invalid verification code.");
       return;
     }
     setError("");
@@ -99,22 +159,69 @@ export default function CustomerLogin() {
     }
   };
 
+  const handleResetPassword = async (e) => {
+    e.preventDefault();
+    setError("");
+    const otpString = otp.join("");
+    if (otpString.length !== 6) {
+      setError("Invalid verification code.");
+      return;
+    }
+    if (passwords.newPassword !== passwords.confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
+    if (passwords.newPassword.length < 8) {
+      setError("Password is too small (must be at least 8 characters)");
+      return;
+    }
+    if (passwords.newPassword.length > 15) {
+      setError("Password is too long (maximum 15 characters)");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const res = await fetch("/api/customer/forgot-password/reset", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: formData.email, otp: otpString, newPassword: passwords.newPassword }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        toast.success("Password reset successful! You can now log in.");
+        setPasswords({ newPassword: "", confirmPassword: "" });
+        setFormData({ ...formData, password: "" }); // clear the old password
+        setStep(1);
+      } else {
+        setError(data.message || data.error || "Failed to reset password.");
+      }
+    } catch {
+      setError("Network error. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleResendOtp = async () => {
     if (resendTimer > 0) return;
     setError("");
     setIsLoading(true);
     try {
-      const res = await fetch("/api/customer/login", {
+      const endpoint = isForgotPasswordFlow ? "/api/customer/forgot-password/send-code" : "/api/customer/login";
+      const payload = isForgotPasswordFlow ? { email: formData.email } : formData;
+
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       });
       const data = await res.json();
-      if (res.ok && data.requiresOtp) {
-        toast.success("A new OTP has been sent to your email.");
+      if (res.ok) {
+        toast.success("A new code has been sent to your email.");
         setResendTimer(30);
       } else {
-        setError(data.message || data.error || "Failed to resend OTP");
+        setError(data.message || data.error || "Failed to resend code");
       }
     } catch {
       setError("Network error. Please try again.");
@@ -136,7 +243,7 @@ export default function CustomerLogin() {
       <div className="absolute bottom-[10%] left-[5%] w-[400px] h-[400px] sm:w-[550px] sm:h-[550px] bg-green-400/15 rounded-full blur-[110px] pointer-events-none" />
 
       <AnimatePresence mode="wait">
-        {step === 1 ? (
+        {step === 1 && (
           <motion.div key="step1" variants={containerVariants} initial="hidden" animate="show" exit="exit"
             className="w-full max-w-sm bg-slate-900/80 backdrop-blur-2xl rounded-3xl shadow-2xl overflow-hidden z-10 border border-slate-700/50">
             <div className="bg-slate-800/30 py-5 px-5 sm:px-6 text-center relative overflow-hidden border-b border-slate-700/50">
@@ -156,17 +263,34 @@ export default function CustomerLogin() {
                   { label: "Email Address", name: "email", type: "email", placeholder: "you@example.com" },
                   { label: "Password", name: "password", type: "password", placeholder: "••••••••" },
                 ].map((field) => (
-                  <motion.div key={field.name} variants={itemVariants}>
+                  <motion.div key={field.name} variants={itemVariants} className="relative">
                     <label className="block text-xs uppercase tracking-wider font-bold text-slate-400 mb-2">{field.label}</label>
-                    <input type={field.type} name={field.name} required value={formData[field.name]} onChange={handleInputChange}
-                      className="w-full px-4 py-3 text-sm rounded-xl border border-slate-700/50 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all bg-slate-800/50 text-white placeholder-slate-500"
+                    <input type={field.type === "password" ? (showPassword ? "text" : "password") : field.type} name={field.name} required value={formData[field.name]} onChange={handleInputChange}
+                      className="w-full px-4 py-3 text-sm rounded-xl border border-slate-700/50 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all bg-slate-800/50 text-white placeholder-slate-500 pr-10"
                       placeholder={field.placeholder} />
+                    {field.type === "password" && (
+                      <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-[34px] text-slate-400 hover:text-emerald-400 transition-colors">
+                        {showPassword ? (
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                        ) : (
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" /></svg>
+                        )}
+                      </button>
+                    )}
                   </motion.div>
                 ))}
 
+                <motion.div variants={itemVariants} className="flex justify-end">
+                  <button type="button" onClick={handleForgotPassword} disabled={isLoading} className="text-emerald-400 hover:text-emerald-300 text-xs font-bold transition-colors cursor-pointer disabled:opacity-50">
+                    Forgot Password?
+                  </button>
+                </motion.div>
+
                 {error && (
                   <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }}
-                    className="p-3 bg-red-500/10 text-red-400 border border-red-500/20 rounded-xl text-sm text-center font-bold">{error}</motion.div>
+                    className="p-3 bg-red-500/10 text-red-400 border border-red-500/20 rounded-xl text-sm text-center font-bold">
+                    {lockoutTimer > 0 ? `Account locked. Try again in ${Math.floor(lockoutTimer / 60)}:${(lockoutTimer % 60).toString().padStart(2, '0')}` : error}
+                  </motion.div>
                 )}
 
                 <motion.button variants={itemVariants} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
@@ -182,7 +306,9 @@ export default function CustomerLogin() {
               </form>
             </div>
           </motion.div>
-        ) : (
+        )}
+
+        {step === 2 && (
           <motion.div key="step2" variants={containerVariants} initial="hidden" animate="show" exit="exit"
             className="w-full max-w-sm bg-slate-900/80 backdrop-blur-2xl rounded-3xl shadow-2xl overflow-hidden z-10 border border-slate-700/50">
             <div className="bg-slate-800/30 py-5 px-5 sm:px-6 text-center relative overflow-hidden border-b border-slate-700/50">
@@ -197,7 +323,7 @@ export default function CustomerLogin() {
               </motion.div>
               <motion.h2 variants={itemVariants} className="text-xl sm:text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-white to-slate-300 tracking-tight relative z-10">Security Check</motion.h2>
               <motion.p variants={itemVariants} className="text-emerald-400/80 text-xs mt-1.5 relative z-10 font-medium leading-relaxed">
-                We sent a 6-digit code to <br/><span className="text-white font-bold">{formData.email}</span>
+                We sent a 6-digit code to <br/><span className="text-white font-bold">{maskEmail(formData.email)}</span>
               </motion.p>
             </div>
 
@@ -224,7 +350,7 @@ export default function CustomerLogin() {
                 )}
 
                 <motion.button variants={itemVariants} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-                  type="submit" disabled={isLoading || otp.join("").length !== 6}
+                  type="submit" disabled={isLoading}
                   className="w-full py-3.5 cursor-pointer bg-gradient-to-r from-emerald-500 to-green-400 text-white rounded-xl text-sm font-bold tracking-wide shadow-[0_0_20px_rgba(16,185,129,0.3)] hover:shadow-[0_0_25px_rgba(16,185,129,0.5)] transition-all disabled:opacity-50 flex justify-center items-center gap-2">
                   {isLoading ? (<><svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" /></svg>Verifying...</>) : "Verify & Login"}
                 </motion.button>
@@ -239,6 +365,77 @@ export default function CustomerLogin() {
                     </button>
                   )}
                 </motion.div>
+              </form>
+            </div>
+          </motion.div>
+        )}
+
+        {step === 3 && (
+          <motion.div key="step3" variants={containerVariants} initial="hidden" animate="show" exit="exit"
+            className="w-full max-w-sm bg-slate-900/80 backdrop-blur-2xl rounded-3xl shadow-2xl overflow-hidden z-10 border border-slate-700/50">
+            <div className="bg-slate-800/30 py-5 px-5 sm:px-6 text-center relative overflow-hidden border-b border-slate-700/50">
+              <div className="absolute inset-0 bg-gradient-to-tr from-emerald-600/10 to-transparent" />
+              <button onClick={() => setStep(1)} className="absolute left-4 top-5 text-slate-400 hover:text-white transition-colors z-20 cursor-pointer">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+              </button>
+              <motion.div variants={itemVariants} className="w-12 h-12 bg-gradient-to-tr from-emerald-500 to-green-400 rounded-xl flex items-center justify-center mx-auto mb-3 shadow-lg shadow-emerald-500/30 relative z-10">
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                </svg>
+              </motion.div>
+              <motion.h2 variants={itemVariants} className="text-xl sm:text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-white to-slate-300 tracking-tight relative z-10">Reset Password</motion.h2>
+              <motion.p variants={itemVariants} className="text-emerald-400/80 text-xs mt-1.5 relative z-10 font-medium leading-relaxed">
+                Enter the verification code sent to <br/><span className="text-white font-bold">{maskEmail(formData.email)}</span>
+              </motion.p>
+            </div>
+
+            <div className="p-5 sm:p-6">
+              <form onSubmit={handleResetPassword} className="space-y-4">
+                <motion.div variants={itemVariants}>
+                  <label className="block text-xs uppercase tracking-wider font-bold text-slate-400 mb-2 text-center">Verification Code</label>
+                  <div className="flex justify-between gap-1 sm:gap-2">
+                    {otp.map((digit, index) => (
+                      <input
+                        key={index} id={`otp-${index}`} type="text" maxLength="1" value={digit}
+                        onChange={(e) => handleOtpChange(index, e.target.value)}
+                        onKeyDown={(e) => handleOtpKeyDown(index, e)}
+                        className="w-10 h-10 sm:w-12 sm:h-12 text-center text-lg font-black rounded-xl border border-slate-700/50 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all bg-slate-800/80 text-emerald-400 shadow-inner"
+                      />
+                    ))}
+                  </div>
+                </motion.div>
+
+                <motion.div variants={itemVariants} className="relative mt-2">
+                  <label className="block text-xs uppercase tracking-wider font-bold text-slate-400 mb-2">New Password</label>
+                  <input type={showPassword ? "text" : "password"} required value={passwords.newPassword} onChange={(e) => setPasswords({...passwords, newPassword: e.target.value})}
+                    className="w-full px-4 py-3 text-sm rounded-xl border border-slate-700/50 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all bg-slate-800/50 text-white placeholder-slate-500 pr-10"
+                    placeholder="••••••••" />
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-[34px] text-slate-400 hover:text-emerald-400 transition-colors">
+                    {showPassword ? (
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                    ) : (
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" /></svg>
+                    )}
+                  </button>
+                </motion.div>
+
+                <motion.div variants={itemVariants}>
+                  <label className="block text-xs uppercase tracking-wider font-bold text-slate-400 mb-2">Confirm Password</label>
+                  <input type={showPassword ? "text" : "password"} required value={passwords.confirmPassword} onChange={(e) => setPasswords({...passwords, confirmPassword: e.target.value})}
+                    className="w-full px-4 py-3 text-sm rounded-xl border border-slate-700/50 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all bg-slate-800/50 text-white placeholder-slate-500"
+                    placeholder="••••••••" />
+                </motion.div>
+
+                {error && (
+                  <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }}
+                    className="p-3 bg-red-500/10 text-red-400 border border-red-500/20 rounded-xl text-sm text-center font-bold">{error}</motion.div>
+                )}
+
+                <motion.button variants={itemVariants} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                  type="submit" disabled={isLoading}
+                  className="w-full py-3.5 cursor-pointer bg-gradient-to-r from-emerald-500 to-green-400 text-white rounded-xl text-sm font-bold tracking-wide shadow-[0_0_20px_rgba(16,185,129,0.3)] hover:shadow-[0_0_25px_rgba(16,185,129,0.5)] transition-all disabled:opacity-50 flex justify-center items-center gap-2 mt-2">
+                  {isLoading ? (<><svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" /></svg>Processing...</>) : "Save New Password"}
+                </motion.button>
               </form>
             </div>
           </motion.div>

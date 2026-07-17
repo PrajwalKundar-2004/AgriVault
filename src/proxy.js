@@ -95,6 +95,8 @@ export default async function proxy(req) {
             "/api/customer/verify-otp",
             "/api/customer/register",
             "/api/customer/logout",
+            "/api/customer/forgot-password/send-code",
+            "/api/customer/forgot-password/reset",
         ];
 
         if (publicEndpoints.includes(pathname)) {

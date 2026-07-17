@@ -16,13 +16,26 @@ export async function POST(request) {
             return NextResponse.json({ message: "Email and password are required" }, { status: 400 });
         }
 
-        const customer = await User.findOne({ email, role: 'customer' });
+        const customer = await User.findOne({ email, role: 'customer' }).lean();
         if (!customer) {
             return NextResponse.json({ message: "No customer account found with this email" }, { status: 404 });
         }
 
+        if (customer.lockUntil && customer.lockUntil > new Date()) {
+            return NextResponse.json({ 
+                message: "Account locked due to too many failed attempts.", 
+                lockUntil: customer.lockUntil 
+            }, { status: 403 });
+        }
+
         const isMatch = await bcrypt.compare(password, customer.password);
         if (!isMatch) {
+            const attempts = (customer.loginAttempts || 0) + 1;
+            const updateData = { loginAttempts: attempts };
+            if (attempts >= 5) {
+                updateData.lockUntil = new Date(Date.now() + 2 * 60 * 1000); // 2 minutes
+            }
+            await User.updateOne({ _id: customer._id }, { $set: updateData }, { strict: false });
             return NextResponse.json({ message: "Invalid credentials" }, { status: 401 });
         }
 
@@ -33,7 +46,10 @@ export async function POST(request) {
 
         await User.updateOne(
             { _id: customer._id },
-            { $set: { otp: otp, otpExpires: otpExpires } },
+            { 
+                $set: { otp: otp, otpExpires: otpExpires, loginAttempts: 0 },
+                $unset: { lockUntil: 1 }
+            },
             { strict: false }
         );
 

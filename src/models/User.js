@@ -21,6 +21,8 @@ const userSchema = new mongoose.Schema({
     role:{type: String, enum: ['ADMIN', 'STAFF', 'CUSTOMER', 'admin', 'staff', 'customer'], default: 'CUSTOMER'},
     otp: { type: String },
     otpExpires: { type: Date },
+    loginAttempts: { type: Number, default: 0 },
+    lockUntil: { type: Date },
 },
 { timestamps: true });
 userSchema.pre('save', async function () {

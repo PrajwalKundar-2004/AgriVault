@@ -22,16 +22,35 @@ export async function POST(request) {
         }
 
         // 2. Find user by email and verify role
-        const staff = await User.findOne({ email, role: 'staff' });
+        const staff = await User.findOne({ email, role: 'staff' }).lean();
         if (!staff) {
             return NextResponse.json({ message: "Staff account not found or invalid role" }, { status: 404 });
+        }
+
+        if (staff.lockUntil && staff.lockUntil > new Date()) {
+            return NextResponse.json({ 
+                message: "Account locked due to too many failed attempts.", 
+                lockUntil: staff.lockUntil 
+            }, { status: 403 });
         }
 
         // 2. Validate Password
         const isMatch = await bcrypt.compare(password, staff.password);
         if (!isMatch) {
+            const attempts = (staff.loginAttempts || 0) + 1;
+            const updateData = { loginAttempts: attempts };
+            if (attempts >= 5) {
+                updateData.lockUntil = new Date(Date.now() + 2 * 60 * 1000); // 2 minutes
+            }
+            await User.updateOne({ _id: staff._id }, { $set: updateData }, { strict: false });
             return NextResponse.json({ message: "Invalid credentials" }, { status: 401 });
         }
+
+        await User.updateOne(
+            { _id: staff._id },
+            { $set: { loginAttempts: 0 }, $unset: { lockUntil: 1 } },
+            { strict: false }
+        );
 
         // 3. Create Token
         const token = jwt.sign(

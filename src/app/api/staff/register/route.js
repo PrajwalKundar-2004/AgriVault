@@ -11,6 +11,14 @@ export async function POST(request) {
             return NextResponse.json({ message: "All fields are required" }, { status: 400 });
         }
 
+        if (password.length < 8) {
+            return NextResponse.json({ message: "Password is too small (must be at least 8 characters)" }, { status: 400 });
+        }
+
+        if (password.length > 15) {
+            return NextResponse.json({ message: "Password is too long (maximum 15 characters)" }, { status: 400 });
+        }
+
         // Check if user already exists
         const existingUser = await User.findOne({ email });
         if (existingUser) {
