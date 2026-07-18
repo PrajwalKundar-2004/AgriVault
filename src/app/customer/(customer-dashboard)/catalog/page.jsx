@@ -40,7 +40,7 @@ export default function CustomerCatalog() {
   const openModal = (product, mode) => {
     setSelectedProduct(product);
     setRequestMode(mode);
-    setQuantity(1);
+    setQuantity("");
   };
 
   const closeModal = () => {
@@ -251,7 +251,7 @@ export default function CustomerCatalog() {
                    <div className="flex justify-between items-center pt-3 border-t border-slate-200 dark:border-white/5 transition-colors duration-500">
                       <span className="text-slate-500 dark:text-slate-400 font-medium text-sm">Estimated Total:</span>
                       <span className={`font-black text-2xl ${requestMode === 'BUY' ? 'text-blue-600 dark:text-blue-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
-                        ₹{(quantity * (requestMode === 'BUY' ? selectedProduct.sellingPrice : selectedProduct.costPrice)).toLocaleString()}
+                        ₹{((Number(quantity) || 0) * (requestMode === 'BUY' ? selectedProduct.sellingPrice : selectedProduct.costPrice)).toLocaleString()}
                       </span>
                    </div>
                 </div>
@@ -265,7 +265,10 @@ export default function CustomerCatalog() {
                     min="1"
                     max={requestMode === 'BUY' ? selectedProduct.quantity : selectedProduct.maxCapacity - selectedProduct.quantity}
                     value={quantity}
-                    onChange={(e) => setQuantity(Number(e.target.value))}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setQuantity(val === "" ? "" : Number(val));
+                    }}
                     className="w-full px-5 py-4 text-xl font-black rounded-2xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all shadow-inner"
                   />
                 </div>

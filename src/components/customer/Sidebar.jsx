@@ -79,7 +79,7 @@ export default function Sidebar() {
       <div className="absolute top-0 left-0 w-full h-64 bg-emerald-500/10 blur-2xl lg:blur-[100px] pointer-events-none rounded-full dark:opacity-50" />
 
       {/* Logo Section */}
-      <div className="h-24 flex items-center px-8 border-b border-slate-200 dark:border-white/5 relative z-10 transition-colors duration-500">
+      <div className="h-20 flex items-center px-8 border-b border-slate-200 dark:border-white/5 relative z-10 transition-colors duration-500">
         <Link href="/customer/dashboard" onClick={() => isMobile && setIsOpen(false)} className="flex items-center gap-3 group">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-500 to-lime-400 flex items-center justify-center text-white shadow-lg shadow-emerald-500/20 group-hover:shadow-emerald-500/40 transition-all duration-300 group-hover:scale-105">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -93,7 +93,7 @@ export default function Sidebar() {
       {/* Navigation Links */}
       <motion.nav 
         variants={navContainerVariants}
-        className="flex-1 overflow-y-auto py-8 px-5 space-y-2 relative z-10"
+        className="flex-1 overflow-y-auto py-3 px-4 lg:px-5 space-y-1 relative z-10"
       >
         {navItems.map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
@@ -105,7 +105,7 @@ export default function Sidebar() {
                   className="relative block group"
                 >
                   <div className={`
-                    flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all duration-300 ease-in-out
+                    flex items-center gap-4 px-4 py-3 rounded-2xl transition-all duration-300 ease-in-out
                     ${isActive 
                       ? "bg-slate-100 dark:bg-white/10 text-emerald-600 dark:text-white shadow-sm dark:shadow-lg dark:shadow-black/20" 
                       : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5 hover:text-emerald-500 dark:hover:text-slate-200"
@@ -133,12 +133,12 @@ export default function Sidebar() {
       </motion.nav>
 
       {/* Bottom Area: Help */}
-      <div className="p-4 pb-16 lg:pb-6 lg:p-6 border-t border-slate-200 dark:border-white/5 relative z-10 space-y-4 transition-colors duration-500">
+      <div className="p-4 pb-16 lg:pb-4 lg:p-4 border-t border-slate-200 dark:border-white/5 relative z-10 space-y-3 transition-colors duration-500 mt-auto">
         
         {/* Help Section */}
-        <div className="bg-gradient-to-br from-emerald-50 to-lime-50 dark:from-emerald-900/40 dark:to-slate-900/40 rounded-xl lg:rounded-2xl p-3 lg:p-5 border border-emerald-500/20 dark:border-emerald-500/10 transition-colors duration-500">
+        <div className="bg-gradient-to-br from-emerald-50 to-lime-50 dark:from-emerald-900/40 dark:to-slate-900/40 rounded-xl lg:rounded-2xl p-3 lg:p-4 border border-emerald-500/20 dark:border-emerald-500/10 transition-colors duration-500">
           <h4 className="text-emerald-700 dark:text-emerald-400 font-bold text-xs lg:text-sm mb-0.5 lg:mb-1">Need Help?</h4>
-          <p className="text-[10px] lg:text-xs text-slate-600 dark:text-slate-400 font-medium leading-relaxed mb-2 lg:mb-4">
+          <p className="text-[10px] lg:text-xs text-slate-600 dark:text-slate-400 font-medium leading-relaxed mb-2">
             Contact support for assistance with your orders.
           </p>
           <button 
